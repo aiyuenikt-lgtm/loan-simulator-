@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>返済プラン比較シミュレーター</title>
+<style>
+:root{font-family:system-ui,-apple-system,"Noto Sans JP",sans-serif;color:#1d2939;background:#f3f6fa}*{box-sizing:border-box}body{margin:0;padding:14px}main{max-width:780px;margin:auto}h1{font-size:21px;margin:8px 0 5px}h2{font-size:16px;margin:0 0 12px}.sub,.muted{color:#667085;font-size:12px}.card{background:white;border:1px solid #dce3eb;border-radius:15px;padding:16px;margin:12px 0;box-shadow:0 2px 8px #102a4308}.tabs,.quick{display:flex;gap:7px;margin:12px 0}.tabs button,.quick button{flex:1;border:1px solid #cad4e0;background:white;padding:11px 4px;border-radius:9px;font-weight:700;color:#344054}.tabs button.active,.quick button.active{background:#185abc;color:white;border-color:#185abc}.metrics{display:grid;grid-template-columns:1fr 1fr;gap:9px}.metric{background:#f1f5fa;border-radius:10px;padding:12px}.metric small{display:block;color:#667085;font-size:11px;margin-bottom:5px}.metric strong{font-size:20px;letter-spacing:-.4px}.large{font-size:24px;font-weight:800;margin:5px 0 12px}.split{display:flex;height:23px;border-radius:7px;overflow:hidden;background:#e7ebf0}.principal{background:#26966e}.interest{background:#db9635}.twocol{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.twocol div{font-size:13px}.twocol strong{display:block;margin-top:4px;font-size:16px}.dot{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px}.detail{border-top:1px solid #e2e8f0;margin-top:14px;padding-top:12px}.row{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid #eef1f5;font-size:13px}.row strong{text-align:right}input[type=range]{width:100%;accent-color:#185abc;margin:12px 0}.rangehead{display:flex;justify-content:space-between;align-items:center}svg{display:block;width:100%;height:auto}#legend{display:flex;gap:13px;flex-wrap:wrap;font-size:12px;margin:10px 0}details summary{cursor:pointer;font-weight:700}footer{font-size:11px;color:#667085;line-height:1.65;padding:5px 4px 25px}button{cursor:pointer}.caption{font-size:12px;color:#667085}#chart{background:#f8fafc;border-radius:10px;padding:4px}
+</style></head><body><main>
+<h1>返済プラン比較シミュレーター</h1><p class="sub">借入元金230万円・4プランを切り替えて確認</p>
+<section class="card"><h2>返済プランを選択</h2><div class="tabs" id="tabs"></div><div class="metrics">
+<div class="metric"><small id="paylabel">1ヶ月目の支払額</small><strong id="pay"></strong></div>
+<div class="metric"><small>返済後の元金残高</small><strong id="balance"></strong></div>
+<div class="metric"><small>完済まで</small><strong id="finish"></strong></div>
+<div class="metric"><small>全期間の利息合計</small><strong id="interesttotal"></strong></div>
+</div></section>
+<section class="card"><h2>毎月の支払い内訳</h2><div class="muted" id="paymentmonth"></div><div class="large" id="paymentexact"></div>
+<div class="split"><div class="principal" id="principalbar"></div><div class="interest" id="interestbar"></div></div>
+<div class="twocol"><div><span class="dot principal"></span>元金返済<strong id="principalexact"></strong></div><div><span class="dot interest"></span>利息<strong id="interestexact"></strong></div></div>
+<details class="detail"><summary>借入先別の詳細を表示</summary><div id="partrows"></div><div class="row"><span>全期間の支払総額</span><strong id="allpaid"></strong></div></details></section>
+<section class="card"><div class="rangehead"><h2>確認する月</h2><strong id="monthlabel">1ヶ月目</strong></div>
+<input id="month" type="range" min="1" max="120" value="1" step="1"><div class="quick" id="quick"></div></section>
+<section class="card"><h2>借入先別の元金残高</h2><div class="caption">縦軸：残高（万円）／横軸：経過年数（0〜10年、1年刻み）</div><div id="chart"></div><div id="legend"></div></section>
+<footer>※固定金利・月末返済・追加借入なしの概算。一本化ローンは提示された返済月額と期間から年利を逆算しています。楽天カードは年利14.9%、月17,000円を利息込みの返済額と仮定しています。実際のリボ手数料や契約条件で結果は変わります。データはこのHTML内だけで計算し、外部には送信しません。</footer>
+</main><script>
+function simulate(principal,annual,payment){let b=principal;const balances=[b],payments=[0],interests=[0],principals=[0];for(let m=1;m<=120;m++){let interest=b*annual/12,paid=Math.min(payment,b+interest),capital=Math.max(0,paid-interest);b=Math.max(0,b-capital);balances.push(b<.01?0:b);payments.push(paid);interests.push(interest);principals.push(capital)}return{balances,payments,interests,principals}}
+function rateFor(p,pay,n){let lo=0,hi=.05;for(let i=0;i<65;i++){let r=(lo+hi)/2,b=p;for(let j=0;j<n;j++)b=b*(1+r)-pay;if(b>0)hi=r;else lo=r}return(lo+hi)/2*12}
+const rak=simulate(500000,.149,17000);
+const plans=[
+{label:"10年",title:"10年返済",parts:[{name:"一本化ローン",color:"#3279c5",...simulate(1800000,rateFor(1800000,28000,120),28000)},{name:"楽天カード",color:"#db9838",...rak}]},
+{label:"5年",title:"5年返済",parts:[{name:"一本化ローン",color:"#3279c5",...simulate(1800000,rateFor(1800000,42000,60),42000)},{name:"楽天カード",color:"#db9838",...rak}]},
+{label:"3年",title:"3年返済",parts:[{name:"一本化ローン",color:"#3279c5",...simulate(1800000,rateFor(1800000,62000,36),62000)},{name:"楽天カード",color:"#db9838",...rak}]},
+{label:"個別",title:"個別返済",parts:[{name:"JA農協",color:"#2b9871",...simulate(300000,.035,10000)},{name:"西中国信用金庫",color:"#9068c9",...simulate(1000000,.135,20000)},{name:"会社借入",color:"#3279c5",...simulate(1000000,.0355,18000)}]}];
+let selected=0,month=1;const $=id=>document.getElementById(id);
+const yen=n=>Math.round(n).toLocaleString("ja-JP")+"円",short=n=>(Math.round(n/1000)/10).toLocaleString("ja-JP")+"万円";
+const sum=(p,m,key)=>p.parts.reduce((s,v)=>s+v[key][m],0);
+const paidTotal=p=>p.parts.reduce((s,v)=>s+v.payments.reduce((a,b)=>a+b,0),0);
+const finish=p=>Array.from({length:121},(_,i)=>i).find(i=>sum(p,i,"balances")<1)??120;
+function render(){const p=plans[selected];$("tabs").innerHTML=plans.map((v,i)=>`<button class="${i===selected?'active':''}" data-plan="${i}">${v.label}</button>`).join("");document.querySelectorAll("[data-plan]").forEach(b=>b.onclick=()=>{selected=+b.dataset.plan;render()});
+$("paylabel").textContent=month+"ヶ月目の支払額";$("pay").textContent=short(sum(p,month,"payments"));$("balance").textContent=short(sum(p,month,"balances"));$("finish").textContent=finish(p)+"ヶ月";$("interesttotal").textContent=short(paidTotal(p)-2300000);
+const paid=sum(p,month,"payments"),principal=sum(p,month,"principals"),interest=sum(p,month,"interests");
+$("paymentmonth").textContent=month+"ヶ月目の支払総額";$("paymentexact").textContent=yen(paid);$("principalexact").textContent=yen(principal);$("interestexact").textContent=yen(interest);$("principalbar").style.width=(paid?principal/paid*100:0)+"%";$("interestbar").style.width=(paid?interest/paid*100:0)+"%";
+$("partrows").innerHTML=p.parts.map(part=>`<div class="row"><span><i class="dot" style="background:${part.color}"></i>${part.name}</span><strong>支払 ${yen(part.payments[month])}<br><span class="muted">残高 ${yen(part.balances[month])}</span></strong></div>`).join("");$("allpaid").textContent=yen(paidTotal(p));$("monthlabel").textContent=month+"ヶ月目";$("month").value=month;
+$("quick").innerHTML=[1,12,36,60,120].map(m=>`<button class="${month===m?'active':''}" data-month="${m}">${m===1?'初月':m/12+'年'}</button>`).join("");document.querySelectorAll("[data-month]").forEach(b=>b.onclick=()=>{month=+b.dataset.month;render()});
+draw(p)}
+function draw(p){const x=m=>39+m*305/120,y=v=>174-v/10000*.65;
+let svg=`<svg viewBox="0 0 350 208" role="img" aria-label="借入先別元金残高グラフ">`;
+for(const v of [0,50,100,150,200])svg+=`<line x1="39" x2="344" y1="${174-v*.65}" y2="${174-v*.65}" stroke="#d9e0e9"/><text x="33" y="${178-v*.65}" text-anchor="end" font-size="10" fill="#667085">${v}</text>`;
+for(let yr=0;yr<=10;yr++)svg+=`<line x1="${x(yr*12)}" x2="${x(yr*12)}" y1="12" y2="174" stroke="#e6ebf1"/><text x="${x(yr*12)}" y="189" text-anchor="middle" font-size="10" fill="#667085">${yr}</text>`;
+for(const part of p.parts){svg+=`<polyline fill="none" stroke="${part.color}" stroke-width="2.8" stroke-linejoin="round" points="${part.balances.map((v,m)=>x(m)+','+y(v)).join(' ')}"/><circle cx="${x(month)}" cy="${y(part.balances[month])}" r="3.8" fill="${part.color}"/>`}
+svg+=`<line x1="${x(month)}" x2="${x(month)}" y1="12" y2="174" stroke="#475467" stroke-dasharray="3 3"/><text x="190" y="204" text-anchor="middle" font-size="10" fill="#667085">経過年数（年）</text><text x="6" y="11" font-size="9" fill="#667085">万円</text></svg>`;
+$("chart").innerHTML=svg;$("legend").innerHTML=p.parts.map(part=>`<span><i class="dot" style="background:${part.color}"></i>${part.name}</span>`).join("")}
+$("month").addEventListener("input",e=>{month=+e.target.value;render()});render();
+</script></body></html>
